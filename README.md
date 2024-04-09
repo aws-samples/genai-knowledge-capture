@@ -180,5 +180,13 @@ If any step within the StepFunction workflow failed, you will receive an email n
 
 After deployment, you can trigger the deployed AWS State Machine using the following command:
 ```
-aws stepfunctions start-execution --state-machine-arn "arn:aws:states:<your aws region>:<your account id>:stateMachine:genai-knowledge-capture-stack-state-machine" --input "{\"documentName\": \"<your document name>\", \"audioFileFolderUri\": \"s3://<your s3 bucket>/assets/audio_samples/what is amazon bedrock/\"}"
+aws stepfunctions start-execution 
+  --state-machine-arn "arn:aws:states:<your aws region>:<your account id>:stateMachine:genai-knowledge-capture-stack-state-machine"
+  --input "{\"documentName\": \"<your document name>\", \"audioFileFolderUri\": \"s3://<your s3 bucket>/assets/audio_samples/what is amazon bedrock/\"}"
 ```
+
+## Security
+See [CONTRIBUTING](https://github.com/aws-samples/genai-knowledge-capture/blob/main/CONTRIBUTING.md#security-issue-notifications) for more information.
+
+## License
+This library is licensed under the MIT-0 License. See the LICENSE file.
