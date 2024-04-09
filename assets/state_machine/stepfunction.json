@@ -1,0 +1,174 @@
+{
+  "Comment": "Document Generator using GenerativeAI",
+  "StartAt": "Preprocess",
+  "States": {
+    "Preprocess": {
+      "Type": "Task",
+      "Resource": "${preprocess_lambda_arn}",
+      "TimeoutSeconds": 60,
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Transcribe Batch",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "NotifyFailure"
+        }
+      ]
+    },
+    "Transcribe Batch": {
+      "Type": "Task",
+      "Resource": "${transcribe_batch_lambda_arn}",
+      "TimeoutSeconds": 180,
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "NotifyFailure",
+          "Comment": "Error"
+        }
+      ],
+      "Next": "Validate"
+    },
+    "Validate": {
+      "Type": "Task",
+      "Resource": "${validate_lambda_arn}",
+      "TimeoutSeconds": 120,
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "NotifyFailure"
+        }
+      ],
+      "Next": "IsValidationSuccessful"
+    },
+    "IsValidationSuccessful": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.continueSummarization",
+          "BooleanEquals": true,
+          "Next": "Summarize"
+        }
+      ],
+      "Default": "TransformResultStatus"
+    },
+    "TransformResultStatus": {
+      "Type": "Pass",
+      "Next": "NotifyFailure",
+      "Result": {
+        "Cause": "Validation failed during to answer analysis",
+        "Error": "Validation Error"
+      }
+    },
+    "Summarize": {
+      "Type": "Task",
+      "Resource": "${summarize_lambda_arn}",
+      "TimeoutSeconds": 120,
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Generate",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "NotifyFailure"
+        }
+      ]
+    },
+    "Generate": {
+      "Type": "Task",
+      "Resource": "${generate_lambda_arn}",
+      "TimeoutSeconds": 60,
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "End": true,
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "NotifyFailure"
+        }
+      ]
+    },
+    "NotifyFailure": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "Subject": "[ERROR]: Task failed",
+        "Message": {
+          "Alarm": "Batch job submitted through Step Functions failed with the following error",
+          "Error.$": "$.Cause"
+        },
+        "TopicArn": "${sns_topic_arn}"
+      },
+      "End": true
+    }
+  }
+}

@@ -1,0 +1,6 @@
+aws-lambda-powertools[tracer,parser]==2.35.1
+langchain==0.1.13
+pandas==2.2.1
+defusedxml==0.7.1
+pyarrow
+s3fs
