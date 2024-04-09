@@ -1,4 +1,4 @@
-# Document Generator using GenerativeAI
+# Knowledge Capture using GenerativeAI
 
 This proof-of-concept ingests audio files, creates transcriptions with custom vocabulary, analyze texts and summarize it as professional documents.
 
