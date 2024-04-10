@@ -3,9 +3,6 @@
 This proof-of-concept ingests audio files, creates transcriptions with custom vocabulary, analyze texts and summarize it as professional documents.
 
 ## Table of Contents
-
-- [Document Generator using GenerativeAI](#document-generator-using-generativeai)
-  - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Prerequisites](#prerequisites)
   - [Target technology stack](#target-technology-stack)
@@ -15,7 +12,7 @@ This proof-of-concept ingests audio files, creates transcriptions with custom vo
   - [High-level Code Structure](#high-level-code-structure)
   - [Personalizing the DocGen Application with Custom Data](#personalizing-the-docgen-application-with-custom-data)
   - [Subscribe to the Amazon SNS topic for failure notification](#subscribe-to-the-amazon-sns-topic-for-failure-notification)
-  - [Trigger the AWS StepFunction using AWS Cli](#trigger-the-aws-stepfunction-using-aws-cli)
+  - [Trigger the AWS StepFunction using AWS CLI](#trigger-the-aws-stepfunction-using-aws-cli)
 
 ## Introduction
 
@@ -40,7 +37,7 @@ This demo application is a proof-of-concept for a document generation applicatio
 - Amazon SNS
 
 ## Solution Architecture
-<img src="assets/diagrams/Architecture.jpg" alt="solution-architecture" width="600" height="415">
+![Solution Diagram](assets/diagrams/Architecture.jpg)
 
 The diagram depicts a solution architecture for a workflow orchestrated by AWS Step Functions within an AWS Cloud Region. The workflow consists of several steps designed to process user input, with mechanisms for success and failure handling at each step. Below is a description of the process flow:
 
@@ -176,7 +173,7 @@ Please follow the [SNS Email Notifications](https://docs.aws.amazon.com/sns/late
 
 If any step within the StepFunction workflow failed, you will receive an email notification.
 
-## Trigger the AWS StepFunction using AWS Cli
+## Trigger the AWS StepFunction using AWS CLI
 
 After deployment, you can trigger the deployed AWS State Machine using the following command:
 ```
