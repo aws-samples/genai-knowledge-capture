@@ -1,6 +1,6 @@
 # Knowledge Capture using GenerativeAI
 
-This proof-of-concept ingests audio files, creates transcriptions with custom vocabulary, analyze texts and summarize it as professional documents.
+This proof-of-concept solution explains a potential solution that can be used to capture the tribal knowledge through voice recordings from senior employess of a company. It outlines methodologies, to use Amazon Transcribe and Amazon Bedrock service for the systematic documentation and verification of the input data. By providing a structure for the formalization of this informal knowledge, the solution guarantees its longevity and applicability to subsequent cohorts of employees in an organization. This endeavor not only ensures the sustained maintenance of operational excellence but also improves the effectiveness of training programs through the incorporation of practical knowledge acquired through direct experience.
 
 ## Table of Contents
   - [Introduction](#introduction)
