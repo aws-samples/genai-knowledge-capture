@@ -45,15 +45,17 @@ The diagram depicts a solution architecture for a workflow orchestrated by AWS S
 
 2. **Preprocess**: The input is first preprocessed. If successful, it moves to the `transcribe` step; if it fails, it triggers the Amazon SNS to send out notifications.
 
-3. **Transcribe**: This step takes the output fron previous step. A successful transcription proceeds to the Validate step, and the transcribe outputs are stored in `s3://*/[Text]/`.
+3. **Transcribe**: This step takes the output fron previous step. A successful transcription proceeds to the Validate step, and the transcribe outputs are stored in Amazon S3 bucket.
 
 4. **Validate**: The transcribed data is validated. Based on the validation result, the workflow diverges:
    - **Success**: It moves to the Summarize step
    - **Failure**: It triggers an SNS Email Notification.
-5. **Summarize**: Post-validation, if the data is successfully summarized, the summarized text is stored in S3 (`s3://*/[Summary]/`). If it fails, it triggers the Amazon SNS to send out notifications.
+
+5. **Summarize**: Post-validation, if the data is successfully summarized, the summarized text is stored in Amazon S3 bucket. If it fails, it triggers the Amazon SNS to send out notifications.
+
 6. **Amazon Bedrock** is the core service supporting the Validate and Summarize Lambda functions.
 
-7. **Generate**: This final step generates the final document, and it is stored in Amazon S3 (`s3://*/[document_storage]/`). Should it fail, it triggers the Amazon SNS to send out notifications.
+7. **Generate**: This final step generates the final document from the summarized text. Should it fail, it triggers the Amazon SNS to send out notifications.
 
 Each step in the process is marked with "Success" or "Fail" pathways, indicating the workflow's ability to handle errors at various stages. On failure, Amazon SNS is used to send out notifications to the user.
 
