@@ -3,6 +3,9 @@
 This proof-of-concept solution explains a potential solution that can be used to capture the tribal knowledge through voice recordings from senior employess of a company. It outlines methodologies, to use Amazon Transcribe and Amazon Bedrock service for the systematic documentation and verification of the input data. By providing a structure for the formalization of this informal knowledge, the solution guarantees its longevity and applicability to subsequent cohorts of employees in an organization. This endeavor not only ensures the sustained maintenance of operational excellence but also improves the effectiveness of training programs through the incorporation of practical knowledge acquired through direct experience.
 
 ## Table of Contents
+
+- [Knowledge Capture using GenerativeAI](#knowledge-capture-using-generativeai)
+  - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Prerequisites](#prerequisites)
   - [Target technology stack](#target-technology-stack)
@@ -13,6 +16,8 @@ This proof-of-concept solution explains a potential solution that can be used to
   - [Personalizing the DocGen Application with Custom Data](#personalizing-the-docgen-application-with-custom-data)
   - [Subscribe to the Amazon SNS topic for failure notification](#subscribe-to-the-amazon-sns-topic-for-failure-notification)
   - [Trigger the AWS StepFunction using AWS CLI](#trigger-the-aws-stepfunction-using-aws-cli)
+  - [Security](#security)
+  - [License](#license)
 
 ## Introduction
 
@@ -37,6 +42,7 @@ This demo application is a proof-of-concept for a document generation applicatio
 - Amazon SNS
 
 ## Solution Architecture
+
 ![Solution Diagram](assets/diagrams/Architecture.jpg)
 
 The diagram depicts a solution architecture for a workflow orchestrated by AWS Step Functions within an AWS Cloud Region. The workflow consists of several steps designed to process user input, with mechanisms for success and failure handling at each step. Below is a description of the process flow:
@@ -48,6 +54,7 @@ The diagram depicts a solution architecture for a workflow orchestrated by AWS S
 3. **Transcribe**: This step takes the output fron previous step. A successful transcription proceeds to the Validate step, and the transcribe outputs are stored in Amazon S3 bucket.
 
 4. **Validate**: The transcribed data is validated. Based on the validation result, the workflow diverges:
+
    - **Success**: It moves to the Summarize step
    - **Failure**: It triggers an SNS Email Notification.
 
@@ -59,7 +66,7 @@ The diagram depicts a solution architecture for a workflow orchestrated by AWS S
 
 Each step in the process is marked with "Success" or "Fail" pathways, indicating the workflow's ability to handle errors at various stages. On failure, Amazon SNS is used to send out notifications to the user.
 
-The AWS Step Functions workflow operates as a central orchestrator, ensuring that each task is executed in the correct order and handling the success or failure of each step appropriately. 
+The AWS Step Functions workflow operates as a central orchestrator, ensuring that each task is executed in the correct order and handling the success or failure of each step appropriately.
 
 ## Deployment
 
@@ -169,6 +176,7 @@ To tailor the DocGen application to incorporate your own data, the subsequent st
 Upon deployment, the AWS CDK infrastructure will facilitate the automatic transfer of audio files to the designated Amazon S3 bucket. Subsequently, the execution of the AWS Step Function can be initiated to commence the processing phase.
 
 ## Subscribe to the Amazon SNS topic for failure notification
+
 Once the solution is deployed, you can subscribe your email to the SNS topic to receive notifications.
 
 Please follow the [SNS Email Notifications](https://docs.aws.amazon.com/sns/latest/dg/sns-email-notifications.html).
@@ -178,14 +186,17 @@ If any step within the StepFunction workflow failed, you will receive an email n
 ## Trigger the AWS StepFunction using AWS CLI
 
 After deployment, you can trigger the deployed AWS State Machine using the following command:
-```
-aws stepfunctions start-execution 
+
+```bash
+aws stepfunctions start-execution
   --state-machine-arn "arn:aws:states:<your aws region>:<your account id>:stateMachine:genai-knowledge-capture-stack-state-machine"
   --input "{\"documentName\": \"<your document name>\", \"audioFileFolderUri\": \"s3://<your s3 bucket>/assets/audio_samples/what is amazon bedrock/\"}"
 ```
 
 ## Security
+
 See [CONTRIBUTING](https://github.com/aws-samples/genai-knowledge-capture/blob/main/CONTRIBUTING.md#security-issue-notifications) for more information.
 
 ## License
+
 This library is licensed under the MIT-0 License. See the LICENSE file.

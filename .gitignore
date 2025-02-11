@@ -54,6 +54,7 @@ var/
 wheels/
 share/python-wheels/
 *.egg-info/
+cdk.out/
 .installed.cfg
 *.egg
 MANIFEST
