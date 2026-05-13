@@ -1,5 +1,5 @@
 aws-lambda-powertools[tracer,parser,validation]==3.22.0
-langchain==0.3.27
+langchain==0.3.30
 langchain-community==0.3.27
 pandas==2.2.1
 pyarrow
