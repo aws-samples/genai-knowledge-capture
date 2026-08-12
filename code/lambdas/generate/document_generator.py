@@ -1,7 +1,7 @@
 from weasyprint import HTML
 from exceptions import CodeError
 from dominate.util import raw
-from dominate.tags import html, head, style, body, h1, h2, u
+from dominate.tags import html, head, style, body, h1, u
 from connections import logger
 import markdown
 import os
@@ -98,23 +98,6 @@ def html_to_pdf(html_document: str, pdf_path: str) -> None:
     except Exception as exception:
         raise CodeError(f"Error while generating PDF file: {exception}")
     return None
-
-
-def add_header(header_name: str) -> str:
-    """
-    Adds a header to the HTML document.
-
-    Arguments:
-    -----------
-    header_name: str
-        Name of the header to be added to the HTML document.
-
-    Returns:
-    --------
-    str:
-        HTML document encoded as string with the header added as H2 tag.
-    """
-    return h2(header_name).render()
 
 
 def add_document_title(title_text: str) -> str:

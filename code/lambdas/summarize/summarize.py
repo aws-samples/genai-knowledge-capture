@@ -74,10 +74,6 @@ def lambda_handler(event: Request, context: LambdaContext) -> str:
             value=response_time,
         )
 
-        # # upload the summary into the s3 folder
-        # df_summary = pd.DataFrame(
-        #     data=[[question, summary_text]], columns=["question", "summary"]
-        # )
         answerSummaryPath = extract_base_s3_path(validAnswersS3Uris[0])
         logger.info(f"answerSummaryPath: {answerSummaryPath}")
         updated, summarizedAnswerS3Uri = upload_to_s3(summary_text, answerSummaryPath)

@@ -7,7 +7,7 @@ This lambda triggers Amazon Transcribe batch jobs, generating texts from a list 
 ## Component Details
 #### Prerequisites
 * [Python 3.12](https://www.python.org/downloads/release/python-3120/) or later
-* [AWS Lambda Powertools 2.32.0](https://docs.powertools.aws.dev/lambda/python/2.32.0/)
+* [AWS Lambda Powertools V2](https://docs.powertools.aws.dev/lambda/python/2.43.1/) (provided by the managed `AWSLambdaPowertoolsPythonV2:67` Lambda layer, not `requirements.txt`)
 
 #### Technology stack
 - [AWS Lambda](https://aws.amazon.com/lambda/)
@@ -25,7 +25,7 @@ This lambda triggers Amazon Transcribe batch jobs, generating texts from a list 
 
 #### Input
 
-Input is received from [Preprocess AWS Lambda](../../preprocess), which runs before this Lambda the AWS Step Function.
+Input is received from [Preprocess AWS Lambda](../preprocess), which runs before this Lambda in the AWS Step Functions workflow.
 
 ```json
 {

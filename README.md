@@ -8,6 +8,7 @@ This proof-of-concept solution explains a potential solution that can be used to
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Prerequisites](#prerequisites)
+  - [Amazon Bedrock models](#amazon-bedrock-models)
   - [Target technology stack](#target-technology-stack)
   - [Solution Architecture](#solution-architecture)
   - [Deployment](#deployment)
@@ -25,21 +26,62 @@ This demo application is a proof-of-concept for a document generation applicatio
 
 ## Prerequisites
 
-- Docker
-- AWS CDK Toolkit 2.114.1+, installed installed and configured. For more information, see Getting started with the AWS CDK in the AWS CDK documentation.
-- Python 3.12+, installed and configured. For more information, see Beginners Guide/Download in the Python documentation.
+- Docker, running locally. The `validate`, `summarize` and `generate` Lambdas
+  are packaged as `linux/arm64` container images, so Docker must be able to
+  build for that platform.
+- [AWS CDK Toolkit](https://docs.aws.amazon.com/cdk/v2/guide/getting-started.html)
+  2.1000.0+ (the `aws-cdk-lib` construct library is pinned to 2.264.0+ in
+  [requirements.txt](requirements.txt))
+- [Python 3.12+](https://www.python.org/downloads/)
 - An active AWS account
-- An AWS account bootstrapped by using AWS CDK in us-east-1 or us-west-2. Enable Claude model access in Bedrock service.
-- An AWS IAM user/role with access to Amazon Transcribe, Amazon Bedrock, Amazon S3, and Amazon Lambda
+- An AWS account bootstrapped with AWS CDK in `us-east-1` or `us-west-2`
+  (`cdk bootstrap aws://<account-id>/<region>`)
+- Access enabled in Amazon Bedrock for the Anthropic Claude models listed under
+  [Amazon Bedrock models](#amazon-bedrock-models)
+- An AWS IAM user/role with access to Amazon Transcribe, Amazon Bedrock,
+  Amazon S3, AWS Lambda, AWS Step Functions, Amazon SNS and AWS KMS
+
+## Amazon Bedrock models
+
+The `validate` and `summarize` Lambdas call Amazon Bedrock through
+[LangChain](https://python.langchain.com/)'s `ChatBedrock`. The available models
+are declared in `MODELID_MAPPING` in each Lambda's `connections.py`:
+
+| Key                      | Bedrock inference profile                     |
+| ------------------------ | --------------------------------------------- |
+| `ClaudeOpus`             | `us.anthropic.claude-opus-5`                  |
+| `ClaudeSonnet` (default) | `us.anthropic.claude-sonnet-5`                |
+| `ClaudeHaiku`            | `us.anthropic.claude-haiku-4-5-20251001-v1:0` |
+
+Two things are worth knowing before changing these values:
+
+- **They are cross-region inference profile IDs, not foundation-model IDs.**
+  Current Anthropic models reject on-demand invocation by bare
+  foundation-model ID and return a `ValidationException` directing the caller
+  to use an inference profile. Because a `us.*` profile can route a request to
+  any region it spans, the IAM policy in [code_stack.py](code/code_stack.py)
+  grants `bedrock:InvokeModel` on `arn:aws:bedrock:*::foundation-model/*` as
+  well as on the inference profile ARN.
+- **Only `max_tokens` is sent as a model parameter.** `temperature`, `top_p`
+  and `top_k` are deprecated on these models and are rejected by the Bedrock
+  API.
+
+To confirm which profiles your account can use:
+
+```bash
+aws bedrock list-inference-profiles --region <your aws region> \
+  --query "inferenceProfileSummaries[?status=='ACTIVE'].inferenceProfileId"
+```
 
 ## Target technology stack
 
 - Amazon Bedrock
-- Amazon Lambda
+- AWS Lambda
 - Amazon S3
 - Amazon Transcribe
 - AWS Step Functions
 - Amazon SNS
+- AWS KMS
 
 ## Solution Architecture
 
@@ -130,9 +172,12 @@ Once it's bootstrapped, you can proceed to deploy cdk.
 $ cdk deploy
 ```
 
-If this is your first time deploying it, the process may take approximately 30-45 minutes to build several Docker images in ECS (Amazon Elastic Container Service). Please be patient until it's completed. Afterward, it will start deploying the docgen-stack, which typically takes about 5-8 minutes.
+The first deployment has to build the three container images and push them to
+Amazon ECR, which typically takes a few minutes depending on your connection.
+Creating the CloudFormation stack itself takes roughly 2-4 minutes. Subsequent
+deployments reuse the Docker layer cache and are considerably faster.
 
-Once the deployment process is complete, you will see the output of the cdk in the terminal, and you can also verify the status in your CloudFormation console.
+Once the deployment process is complete, you will see the output of the cdk in the terminal, and you can also verify the status in your CloudFormation console. The stack outputs the S3 bucket name, the SNS topic name and the Step Functions state machine ARN.
 
 To delete the cdk once you have finished using it to avoid future costs, you can either delete it through the console or execute the following command in the terminal.
 
@@ -185,12 +230,34 @@ If any step within the StepFunction workflow failed, you will receive an email n
 
 ## Trigger the AWS StepFunction using AWS CLI
 
-After deployment, you can trigger the deployed AWS State Machine using the following command:
+After deployment, you can trigger the deployed AWS State Machine using the following command. The state machine ARN and bucket name are both printed as stack outputs by `cdk deploy`.
 
 ```bash
-aws stepfunctions start-execution
-  --state-machine-arn "arn:aws:states:<your aws region>:<your account id>:stateMachine:genai-knowledge-capture-stack-state-machine"
+aws stepfunctions start-execution \
+  --region <your aws region> \
+  --state-machine-arn "arn:aws:states:<your aws region>:<your account id>:stateMachine:genai-knowledge-capture-stack-state-machine" \
   --input "{\"documentName\": \"<your document name>\", \"audioFileFolderUri\": \"s3://<your s3 bucket>/assets/audio_samples/what is amazon bedrock/\"}"
+```
+
+The workflow takes a couple of minutes, most of which is the Amazon Transcribe
+batch job. When it succeeds, the output contains the S3 URI of the generated
+PDF:
+
+```json
+{
+  "statusCode": 200,
+  "pdfFileS3Uri": "s3://<your s3 bucket>/document_storage/<your document name>.pdf",
+  "documentName": "<your document name>",
+  "serviceName": "app-generate"
+}
+```
+
+You can follow the execution with:
+
+```bash
+aws stepfunctions describe-execution \
+  --region <your aws region> \
+  --execution-arn <execution arn returned by start-execution>
 ```
 
 ## Security

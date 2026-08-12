@@ -1,7 +1,5 @@
 import os
-import re
 import boto3
-import json
 from aws_lambda_powertools import Logger, Tracer, Metrics
 from langchain_aws import ChatBedrock
 from botocore.client import Config
@@ -70,51 +68,3 @@ class Connections:
             cache=cache,
         )
         return llm
-
-    @staticmethod
-    def invoke_claude3(messages, llm_claude3):
-        """
-        Invoke the default Anthropic model directly.
-        """
-        model_kwargs = llm_claude3.model_kwargs
-        if "max_tokens_to_sample" in model_kwargs:
-            value = model_kwargs.pop("max_tokens_to_sample")
-            model_kwargs["max_tokens"] = value
-        model_kwargs["anthropic_version"] = ""
-        body = str.encode(
-            json.dumps(
-                {
-                    **model_kwargs,
-                    "messages": messages,
-                }
-            )
-        )
-
-        response = json.loads(
-            Connections.bedrock_client.invoke_model(
-                body=body, modelId=MODELID_MAPPING[DEFAULT_MODEL_NAME]
-            )["body"].read()
-        )
-        response_message = response.get("content")[0].get("text")
-        return response_message
-
-    @staticmethod
-    def convert_prompt_to_messages(prompt):
-        """
-        Convert a prompt to a list of messages, so it is compatible with the Anthropic Messages API.
-        """
-        messages = []
-        role_regex = re.compile(
-            r"(Human:|Assistant:)\s?(.*?)(?=Human:|Assistant:|$)", re.DOTALL
-        )
-
-        for match in role_regex.finditer(prompt):
-            role, content = match.groups()
-            role = role.strip(":").lower()
-            if role == "human" or role == "Human":
-                role = "user"
-            else:
-                role = "assistant"
-            messages.append({"role": role, "content": content.strip()})
-
-        return messages

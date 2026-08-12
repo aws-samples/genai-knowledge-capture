@@ -9,7 +9,38 @@ The primary objective of this AWS Lambda is to generate summary of multiple rele
 #### Prerequisites
 
 - [Python 3.12](https://www.python.org/downloads/release/python-3120/) or later
-- [AWS Lambda Powertools 2.35.1](https://docs.powertools.aws.dev/lambda/python/2.35.1/)
+- [AWS Lambda Powertools 3.34.0](https://docs.powertools.aws.dev/lambda/python/latest/) (installed via `requirements.txt`)
+- [langchain-core 1.5.4](https://python.langchain.com/) for prompt templating and XML output parsing
+- [langchain-aws 1.7.0](https://github.com/langchain-ai/langchain-aws) for the `ChatBedrock` client
+- [pandas 3.0.5](https://pandas.pydata.org/) for tabulating transcribed answers
+- [defusedxml 0.7.1](https://pypi.org/project/defusedxml/) for hardened XML parsing
+
+> The `langchain` and `langchain-community` meta-packages are deliberately not
+> used. Everything this Lambda needs lives in `langchain-core` (the output
+> parsers) and `langchain-aws` (`ChatBedrock`, which supersedes the deprecated
+> `BedrockChat`), so importing from those directly keeps the image smaller and
+> avoids a much larger dependency surface.
+
+#### Amazon Bedrock model
+
+The model is selected by key from `MODELID_MAPPING` in
+[connections.py](connections.py):
+
+| Key                      | Bedrock inference profile                     |
+| ------------------------ | --------------------------------------------- |
+| `ClaudeOpus`             | `us.anthropic.claude-opus-5`                  |
+| `ClaudeSonnet` (default) | `us.anthropic.claude-sonnet-5`                |
+| `ClaudeHaiku`            | `us.anthropic.claude-haiku-4-5-20251001-v1:0` |
+
+These are **cross-region inference profile IDs**, not bare foundation-model
+IDs. Current Anthropic models reject on-demand invocation by foundation-model
+ID and return a `ValidationException` telling the caller to use an inference
+profile. Because a `us.*` profile routes requests to several regions, the IAM
+policy in [code_stack.py](../../code_stack.py) grants `bedrock:InvokeModel` on
+`arn:aws:bedrock:*::foundation-model/*` in addition to the profile ARN.
+
+Only `max_tokens` is sent as a model parameter. `temperature`, `top_p` and
+`top_k` are deprecated on these models and are rejected by the Bedrock API.
 
 #### Technology stack
 
@@ -22,15 +53,16 @@ The primary objective of this AWS Lambda is to generate summary of multiple rele
 | Files                                      | Description                                                                                                    |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
 | [connections.py](connections.py)           | Python file with `Connections` class for establishing connections with external dependencies of the lambda     |
+| [Dockerfile](Dockerfile)                   | File containing Docker commands to build and run the AWS Lambda                                                |
 | [exceptions.py](exceptions.py)             | Python file containing custom exception classes `CodeError` and `ConnectionError`                              |
-| [summarize.py](dumarize.py)     | Python file containing the `lambda_handler` function that acts as the starting point for AWS Lambda invocation |
+| [summarize.py](summarize.py)     | Python file containing the `lambda_handler` function that acts as the starting point for AWS Lambda invocation |
 | [prompt_templates.py](prompt_templates.py) | Python variables with input Prompts for the LLM to operate                                                     |
 | [summarization.py](summarization.py)       | Python utility class for performing answer summary using Amazon Bedrock service                                |
 | [utils.py](utils.py)                       | Python utility file containing reusable methods                                                                |
 
 #### Input
 
-The AWS Lambda is part of a AWS Step Function and it requires following string as input. The input for the lambda is received from [Validation AWS Lambda](../gp-eda-doc-generation-validation) that runs before this Lambda in Answer Analysis AWS Step Function.
+The AWS Lambda is part of a AWS Step Function and it requires following string as input. The input for the lambda is received from [Validate AWS Lambda](../validate) that runs before this Lambda in the AWS Step Functions workflow.
 
 ```json
 {

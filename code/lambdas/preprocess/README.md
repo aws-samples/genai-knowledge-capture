@@ -9,7 +9,7 @@ This AWS Lambda preprocess users input and generate a list of URIs containing au
 #### Prerequisites
 
 - [Python 3.12](https://www.python.org/downloads/release/python-3120/) or later
-- [AWS Lambda Powertools 2.35.1](https://docs.powertools.aws.dev/lambda/python/2.35.1/)
+- [AWS Lambda Powertools V2](https://docs.powertools.aws.dev/lambda/python/2.43.1/) (provided by the managed `AWSLambdaPowertoolsPythonV2:67` Lambda layer, not `requirements.txt`)
 
 #### Technology stack
 
