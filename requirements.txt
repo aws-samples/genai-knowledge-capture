@@ -1,3 +1,6 @@
-aws-cdk-lib>=2.220.0
+aws-cdk-lib>=2.264.0
 constructs>=10.0.0,<11.0.0
-cdk-nag>=2.10.0
+# cdk-nag v3 replaced the IAspect engine with an IPolicyValidationPlugin and
+# removed NagSuppressions from the public API. app.py uses the v2 Aspects +
+# NagSuppressions pattern, so stay on 2.x until that is migrated.
+cdk-nag>=2.38.2,<3.0.0

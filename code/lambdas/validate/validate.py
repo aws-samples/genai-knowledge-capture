@@ -89,7 +89,7 @@ def lambda_handler(event: Request, context: LambdaContext) -> str:
             # Start timer
             start_time = time.time()
             ans = answer_anomaly_detection(
-                model_name="Claude3",
+                model_name="ClaudeSonnet",
                 list_answers_w_index=list_answers_w_index,
                 input_question=question,
             )

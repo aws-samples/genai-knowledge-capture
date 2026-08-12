@@ -1,4 +1,4 @@
-from langchain.output_parsers import PydanticOutputParser
+from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -7,7 +7,7 @@ from langchain_core.prompts import (
 from prompt_templates import SYSTEM_PROMPT, TOPIC_CLASSIFICATION_TEMPLATE
 from connections import Connections
 from typing import List
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 
 class AnswerAnomaly(BaseModel):

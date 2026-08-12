@@ -1,17 +1,17 @@
-from langchain.output_parsers import XMLOutputParser
+from langchain_core.output_parsers import XMLOutputParser
 from langchain_core.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
 from prompt_templates import SYSTEM_PROMPT, SUMMARIZATION_TEMPLATE_PARAGRAPH
-from connections import Connections
+from connections import Connections, DEFAULT_MODEL_NAME
 from utils import parse_summary
 from typing import List
 
 
 def summarization(
-    question: str, list_of_answers: List[str], model_name: str = "Claude3"
+    question: str, list_of_answers: List[str], model_name: str = DEFAULT_MODEL_NAME
 ) -> str:
     """
     Summarizes a list of answers for a given question using a specified LLM from Bedrock.
@@ -22,7 +22,7 @@ def summarization(
     Inputs:
         - question (str): The question for which the answers need to be summarized.
         - list_of_answers (List[str]): A list of answers provided for the question.
-        - model_name (str, optional): The name of the language model to be used for summarization. Defaults to "Claude3".
+        - model_name (str, optional): The name of the language model to be used for summarization. Defaults to DEFAULT_MODEL_NAME.
     Returns:
         - ans (str): The summarized answer as returned by the language model's output stroutputparser.
 

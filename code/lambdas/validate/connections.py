@@ -3,13 +3,27 @@ import re
 import boto3
 import json
 import logging
-from langchain_community.chat_models import BedrockChat
+from langchain_aws import ChatBedrock
 from aws_lambda_powertools import Logger, Tracer, Metrics
 from botocore.client import Config
 
 tracer = Tracer()
 logger = Logger(log_uncaught_exceptions=True, serialize_stacktrace=True)
 metrics = Metrics()
+
+# Amazon Bedrock model IDs for the latest Anthropic model generation.
+#
+# These are cross-region *inference profile* IDs, not bare foundation-model
+# IDs: current Anthropic models cannot be invoked with on-demand throughput
+# through a foundation-model ID and return a ValidationException instructing
+# the caller to use an inference profile instead.
+MODELID_MAPPING = {
+    "ClaudeOpus": "us.anthropic.claude-opus-5",
+    "ClaudeSonnet": "us.anthropic.claude-sonnet-5",
+    "ClaudeHaiku": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+}
+
+DEFAULT_MODEL_NAME = "ClaudeSonnet"
 
 
 class Connections:
@@ -31,61 +45,37 @@ class Connections:
     )
 
     @staticmethod
-    def get_bedrock_llm(model_name="ClaudeInstant", max_tokens=256, cache=True):
+    def get_bedrock_llm(
+        model_name: str = DEFAULT_MODEL_NAME, max_tokens: int = 256, cache: bool = True
+    ) -> ChatBedrock:
         """
-        Initialize and return a Bedrock LLM client.
+        Initialize and return a Bedrock chat model client.
         """
         logging.debug("Creating Bedrock LLM client.")
-        MODELID_MAPPING = {
-            "Titan": "amazon.titan-tg1-large",
-            "Claude2": "anthropic.claude-v2",
-            "ClaudeInstant": "anthropic.claude-instant-v1",
-            "Claude3": "anthropic.claude-3-sonnet-20240229-v1:0",
-        }
 
-        MODEL_KWARGS_MAPPING = {
-            "Titan": {
-                "maxTokenCount": max_tokens,
-                "temperature": 0,
-                "topP": 1,
-            },
-            "Claude2": {
-                "max_tokens": max_tokens,
-                "temperature": 0,
-                "top_p": 1,
-                "top_k": 50,
-                "stop_sequences": ["\n\nHuman"],
-            },
-            "Claude3": {
-                "max_tokens": max_tokens,
-                "temperature": 0,
-                "top_p": 1,
-                "top_k": 50,
-                "stop_sequences": ["\n\nHuman"],
-            },
-            "ClaudeInstant": {
-                "max_tokens": max_tokens,
-                "temperature": 0,
-                "top_p": 1,
-                "top_k": 50,
-                "stop_sequences": ["\n\nHuman"],
-            },
-        }
+        try:
+            model_id = MODELID_MAPPING[model_name]
+        except KeyError as error:
+            raise ValueError(
+                f"Unknown model name '{model_name}'. "
+                f"Expected one of: {', '.join(MODELID_MAPPING)}"
+            ) from error
 
-        model = model_name
-        llm = BedrockChat(
+        # The latest Anthropic models accept only max_tokens and stop_sequences.
+        # temperature, top_p and top_k are deprecated and are rejected by the
+        # Bedrock API with a ValidationException.
+        llm = ChatBedrock(
             client=Connections.bedrock_client,
-            model_id=MODELID_MAPPING[model],
-            model_kwargs=MODEL_KWARGS_MAPPING[model],
+            model_id=model_id,
+            model_kwargs={"max_tokens": max_tokens},
             cache=cache,
-            # model_kwargs=json.loads(body)
         )
         return llm
 
     @staticmethod
     def invoke_claude3(messages, llm_claude3):
         """
-        Invoke the Claude3 model.
+        Invoke the default Anthropic model directly.
         """
         model_kwargs = llm_claude3.model_kwargs
         if "max_tokens_to_sample" in model_kwargs:
@@ -103,7 +93,7 @@ class Connections:
 
         response = json.loads(
             Connections.bedrock_client.invoke_model(
-                body=body, modelId="anthropic.claude-3-sonnet-20240229-v1:0"
+                body=body, modelId=MODELID_MAPPING[DEFAULT_MODEL_NAME]
             )["body"].read()
         )
         response_message = response.get("content")[0].get("text")
@@ -112,7 +102,7 @@ class Connections:
     @staticmethod
     def convert_prompt_to_messages(prompt):
         """
-        Convert a prompt to a list of messages, so it is compatible with the Claude3 Message API.
+        Convert a prompt to a list of messages, so it is compatible with the Anthropic Messages API.
         """
         messages = []
         role_regex = re.compile(

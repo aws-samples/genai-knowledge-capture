@@ -56,7 +56,9 @@ def lambda_handler(event: Request, context: LambdaContext) -> str:
         start_time = time.time()
 
         # Calling LLM to summarize the answers for the given question
-        summary_text = summarization(question, list_of_answers, model_name="Claude3")
+        summary_text = summarization(
+            question, list_of_answers, model_name="ClaudeSonnet"
+        )
         logger.debug(f"Summarized answer: \n {summary_text}")
 
         # End timer

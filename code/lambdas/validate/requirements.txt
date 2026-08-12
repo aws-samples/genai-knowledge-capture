@@ -1,6 +1,5 @@
-aws-lambda-powertools[tracer,parser,validation]==3.22.0
-langchain==0.3.27
-langchain-community==0.3.27
-pandas==2.2.1
-pyarrow
-s3fs
+aws-lambda-powertools[tracer,parser,validation]==3.34.0
+langchain-core==1.5.4
+langchain-aws==1.7.0
+pandas==3.0.5
+pydantic>=2.10.6,<3

@@ -1,7 +1,5 @@
-aws-lambda-powertools[tracer,parser]==3.22.0
-langchain==0.3.7
-langchain-community==0.3.27
-pandas==2.2.1
+aws-lambda-powertools[tracer,parser]==3.34.0
+langchain-core==1.5.4
+langchain-aws==1.7.0
+pandas==3.0.5
 defusedxml==0.7.1
-pyarrow
-s3fs

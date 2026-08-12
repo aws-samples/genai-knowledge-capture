@@ -171,13 +171,31 @@ class CodeStack(Stack):
             "BedrockPolicy",
             policy_name="AmazonBedrockAccessPolicy",
             statements=[
+                # Model invocation goes through a cross-region inference profile,
+                # which requires access to the profile itself *and* to the
+                # underlying foundation models in every region the profile can
+                # route to. Hence the wildcard region on foundation-model.
                 iam.PolicyStatement(
-                    actions=["bedrock:*"],
+                    actions=[
+                        "bedrock:InvokeModel",
+                        "bedrock:InvokeModelWithResponseStream",
+                    ],
                     resources=[
-                        f"arn:aws:bedrock:{Aws.REGION}::foundation-model/*"
-                    ],  # Adjust as needed, specifying resources or using '*' for all resources
-                    effect=iam.Effect.ALLOW,  # Specify ALLOW or DENY arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-v2
-                )
+                        "arn:aws:bedrock:*::foundation-model/*",
+                        f"arn:aws:bedrock:{Aws.REGION}:{Aws.ACCOUNT_ID}:inference-profile/*",
+                    ],
+                    effect=iam.Effect.ALLOW,
+                ),
+                iam.PolicyStatement(
+                    actions=[
+                        "bedrock:ListFoundationModels",
+                        "bedrock:GetFoundationModel",
+                        "bedrock:ListInferenceProfiles",
+                        "bedrock:GetInferenceProfile",
+                    ],
+                    resources=["*"],
+                    effect=iam.Effect.ALLOW,
+                ),
             ],
         )
         s3_policy = iam.Policy(
@@ -190,8 +208,8 @@ class CodeStack(Stack):
                     resources=[
                         f"arn:aws:s3:::{bucket.bucket_name}/*",
                         f"arn:aws:s3:::{bucket.bucket_name}",
-                    ],  # Adjust as needed, specifying resources or using '*' for all resources
-                    effect=iam.Effect.ALLOW,  # Specify ALLOW or DENY arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-v2
+                    ],
+                    effect=iam.Effect.ALLOW,
                 )
             ],
         )
